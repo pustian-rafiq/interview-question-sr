@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Models\ProductVariantPrice;
 use App\Models\Variant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -17,7 +19,9 @@ class ProductController extends Controller
      */
     public function index()
     {
-        return view('products.index');
+        $products = Product::with('product_variant_prices','product_variants')->paginate(3);
+       //return $products;
+        return view('products.index',compact('products'));
     }
 
     /**
@@ -39,7 +43,83 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+      
+        DB::transaction(function() use($request) {
+           
+            $product = new Product();
 
+            $product->title = $request->title;
+            $product->sku = $request->sku;
+            $product->description = $request->description;
+
+            $product->save();
+
+            //Save product variants data
+            $productVariant = new ProductVariant();
+
+            $countVariant = count($request->product_variant);
+  
+            if($countVariant !== null){
+              for ($i=0; $i < $countVariant ; $i++) { 
+                $countTags = count($request->product_variant[$i]['tags']);
+
+                for($j=0; $j < $countTags ; $j++){
+                    $productVariant = new ProductVariant();
+  
+                    $productVariant->variant_id = $request->product_variant[$i]['option'];
+                    $productVariant->variant = $request->product_variant[$i]['tags'][$j];
+                    $productVariant->product_id = $product->id;
+    
+                    $productVariant->save();
+                }
+               
+              }
+            }
+
+            //Save product variants data
+            $productVariantPrice = new ProductVariantPrice();
+
+            $countVariantPrice = count($request->product_variant_prices);
+  
+            if($countVariantPrice !== null){
+              for ($i=0; $i < $countVariantPrice ; $i++) { 
+
+                    $productVariant = new ProductVariant();
+  
+                    $productVariantPrice->product_variant_one = 1;
+                    $productVariantPrice->product_variant_two =2;
+                    $productVariantPrice->product_variant_three = 3;
+                    $productVariantPrice->price = $request->product_variant_prices[$i]['price'];
+                    $productVariantPrice->stock = $request->product_variant_prices[$i]['stock'];
+                    $productVariantPrice->product_id = $product->id;
+    
+                    $productVariantPrice->save();
+               
+              }
+            }
+
+            // Save product image
+            $productImage = new ProductImage();
+            if($request->product_image){
+                $image = $request->product_image;
+                $image_thumbnail = $request->product_image;
+                $img_name = date('YmdHi').$image->getClientOriginalName();
+                $image->move(public_path("backend/uploads/products"),$img_name);
+                $image_thumbnail->move(public_path("backend/uploads/thumbnail"),$img_name);
+
+                $productImage['file_path'] = $img_name;
+                $productImage['thumbnail'] = $img_name;
+                $productImage->product_id = $product->id;
+            }
+
+        });
+        
+        return response()->json([
+            'message' => 'Product added successfull',
+            'status' => 200
+        ]);
+
+        //return redirect()->route('student.registration.view')->with($notification);
     }
 
 
@@ -60,10 +140,11 @@ class ProductController extends Controller
      * @param \App\Models\Product $product
      * @return \Illuminate\Http\Response
      */
-    public function edit(Product $product)
+    public function edit(Product $product,$id)
     {
         $variants = Variant::all();
-        return view('products.edit', compact('variants'));
+        $editProduct = Product::with('product_variant_prices','product_variants')->find($id);
+        return view('products.edit', compact('variants','editProduct'));
     }
 
     /**

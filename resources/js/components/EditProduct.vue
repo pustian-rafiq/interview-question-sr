@@ -7,7 +7,7 @@
                     <div class="card-body">
                         <div class="form-group">
                             <label for="">Product Name</label>
-                            <input type="text" v-model="product_name" placeholder="Product Name" class="form-control">
+                            <input type="text" v-model="product_name"  :value="{{ getProduct.title }}" class="form-control">
                         </div>
                         <div class="form-group">
                             <label for="">Product SKU</label>
@@ -107,12 +107,7 @@ export default {
         vueDropzone: vue2Dropzone,
         InputTag
     },
-    props: {
-        variants: {
-            type: Array,
-            required: true
-        }
-    },
+    props: ['getProduct'],
     data() {
         return {
             product_name: '',
@@ -131,7 +126,8 @@ export default {
                 thumbnailWidth: 150,
                 maxFilesize: 0.5,
                 headers: {"My-Awesome-Header": "header value"}
-            }
+            },
+            //getProduct: this.editProduct
         }
     },
     methods: {
@@ -164,7 +160,7 @@ export default {
                 })
             })
         },
-
+   
         // combination algorithm
         getCombn(arr, pre) {
             pre = pre || '';
@@ -178,6 +174,7 @@ export default {
             return ans;
         },
 
+ 
         // store product into database
         saveProduct() {
             let product = {
@@ -192,8 +189,6 @@ export default {
 
             axios.post('/product/store', product).then(response => {
                  console.log("data",response.data);
-                 console.log("Save data",response.message);
-                 console.log("Save data",response.status);
             }).catch(error => {
                 console.log(error);
             })
@@ -205,6 +200,7 @@ export default {
     },
     mounted() {
         console.log('Component mounted.')
+        console.log(getProduct)
     }
 }
 </script>
