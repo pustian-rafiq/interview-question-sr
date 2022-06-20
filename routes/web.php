@@ -24,10 +24,16 @@ Route::get('/home', 'HomeController@index')->name('home');
 Route::middleware('auth')->group(function () {
     Route::resource('product-variant', 'VariantController');
     // Route::resource('product', 'ProductController');
+  
+        //Product routes here
     Route::get("product/index",'ProductController@index')->name('product.index');
     Route::get("product/create",'ProductController@create')->name('product.create');
     Route::post("product/store",'ProductController@store');
     Route::get("product/edit/{id}",'ProductController@edit')->name('product.edit');
+    Route::get("product/update/{id}",'ProductController@edit')->name('product.update');
+
+    Route::get("product/search",'ProductController@searchProduct')->name('product.search');
+    
     Route::resource('blog', 'BlogController');
     Route::resource('blog-category', 'BlogCategoryController');
 });
