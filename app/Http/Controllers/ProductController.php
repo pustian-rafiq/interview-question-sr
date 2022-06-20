@@ -232,7 +232,7 @@ class ProductController extends Controller
         });
         
         return response()->json([
-            'message' => 'Product added successfull',
+            'message' => 'Product updated successfull',
             'status' => 200
         ]);
     }
@@ -261,10 +261,19 @@ class ProductController extends Controller
         $variant = strtolower($request['variant']) ?? "";
         $price_from = $request['price_from'] ?? "";
         $price_to = $request['price_to'] ?? "";
+        $price_to = $request['price_to'] ?? "";
+        $date = date("d/m/Y", strtotime($request['date']));
+
+        $product = Product::all();
         
         if($title != null || $variant != null || $price_from != null || $price_to != null){
+
             $products = Product::with('product_variant_prices','product_variants')
-            ->where('products.title', 'LIKE', "%$title%", 'OR','products_variants.variant', "%$variant%", 'OR', 'product_variant_prices.price', '>','$price_from', 'AND','product_variant_prices.price', '<','$price_to')->paginate(3);
+            ->where('title', 'LIKE', "%$title%", 'OR','date("d/m/Y", strtotime(created_at))','=', "$date")
+            ->orWhere('created_at','LIKE', "$date")
+            ->paginate(3);
+
+            
         }else{
             $products = Product::with('product_variant_prices','product_variants')->get();
         }
