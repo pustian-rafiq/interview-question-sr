@@ -154,9 +154,87 @@ class ProductController extends Controller
      * @param \App\Models\Product $product
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Product $product)
+    public function update(Request $request, $id)
     {
-        //
+       
+        
+        DB::transaction(function() use($request,$id) {
+
+            $product = Product::findOrFails($id);
+
+            $product->title = $request->title;
+            $product->sku = $request->sku;
+            $product->description = $request->description;
+
+            $product->update();
+
+            //Save product variants data
+            $productVariant = new ProductVariant();
+
+            $countVariant = count($request->product_variant);
+  
+            if($countVariant !== null){
+              for ($i=0; $i < $countVariant ; $i++) { 
+                $countTags = count($request->product_variant[$i]['tags']);
+
+                for($j=0; $j < $countTags ; $j++){
+                    $productVariant = new ProductVariant();
+  
+                    $productVariant->variant_id = $request->product_variant[$i]['option'];
+                    $productVariant->variant = $request->product_variant[$i]['tags'][$j];
+                    $productVariant->product_id = $product->id;
+    
+                    $productVariant->update();
+                }
+               
+              }
+            }
+
+            //Save product variants data
+            $productVariantPrice = new ProductVariantPrice();
+
+            $countVariantPrice = count($request->product_variant_prices);
+  
+            if($countVariantPrice !== null){
+              for ($i=0; $i < $countVariantPrice ; $i++) { 
+
+                    $productVariant = new ProductVariant();
+  
+                    $productVariantPrice->product_variant_one = 1;
+                    $productVariantPrice->product_variant_two =2;
+                    $productVariantPrice->product_variant_three = 3;
+                    $productVariantPrice->price = $request->product_variant_prices[$i]['price'];
+                    $productVariantPrice->stock = $request->product_variant_prices[$i]['stock'];
+                    $productVariantPrice->product_id = $product->id;
+    
+                    $productVariantPrice->update();
+               
+              }
+            }
+
+            // Save product image
+            $productImage = new ProductImage();
+
+            if($request->product_image){
+                $image = $request->product_image;
+                $image_thumbnail = $request->product_image;
+                $img_name = date('YmdHi').$image->getClientOriginalName();
+                $image->move(public_path("backend/uploads/products"),$img_name);
+                $image_thumbnail->move(public_path("backend/uploads/thumbnail"),$img_name);
+
+                $productImage['file_path'] = $img_name;
+                $productImage['thumbnail'] = $img_name;
+                $productImage->product_id = $product->id;
+
+                $productImage->update();
+            }
+
+        });
+        
+        return response()->json([
+            'message' => 'Product added successfull',
+            'status' => 200
+        ]);
     }
 
     /**
@@ -168,5 +246,30 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         //
+    }
+
+
+    /**
+     *Search a product using product title, price range etc
+     *
+     * @param \App\Models\Product $product
+     * @return \Illuminate\Http\Response
+     */
+    public function searchProduct(Request $request)
+    {
+        $title = strtolower($request['title']) ?? "";
+        $variant = strtolower($request['variant']) ?? "";
+        $price_from = $request['price_from'] ?? "";
+        $price_to = $request['price_to'] ?? "";
+        
+        if($title != null || $variant != null || $price_from != null || $price_to != null){
+            $products = Product::with('product_variant_prices','product_variants')
+            ->where('products.title', 'LIKE', "%$title%", 'OR','products_variants.variant', "%$variant%", 'OR', 'product_variant_prices.price', '>','$price_from', 'AND','product_variant_prices.price', '<','$price_to')->paginate(3);
+        }else{
+            $products = Product::with('product_variant_prices','product_variants')->get();
+        }
+
+     
+        return view('products.index',compact('products'));
     }
 }
