@@ -92,7 +92,7 @@
             </div>
         </div>
 
-        <button @click="saveProduct" type="submit" class="btn btn-lg btn-primary">Save</button>
+        <button @click="editProduct" type="submit" class="btn btn-lg btn-primary">Save</button>
         <button type="button" class="btn btn-secondary btn-lg">Cancel</button>
     </section>
 </template>
@@ -107,7 +107,7 @@ export default {
         vueDropzone: vue2Dropzone,
         InputTag
     },
-    props: ['getProduct'],
+    props: ["variants", "getProduct"],
     data() {
         return {
             product_name: '',
@@ -176,7 +176,7 @@ export default {
 
  
         // store product into database
-        saveProduct() {
+        editProduct() {
             let product = {
                 title: this.product_name,
                 sku: this.product_sku,
